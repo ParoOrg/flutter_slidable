@@ -283,13 +283,10 @@ class SlidableData extends InheritedWidget {
     double? positionFactor,
   }) {
     return FractionallyAlignedSizedBox(
-      leftFactor:
-          directionIsXAxis ? (showActions ? positionFactor : null) : 0.0,
-      rightFactor:
-          directionIsXAxis ? (showActions ? null : positionFactor) : 0.0,
+      leftFactor: directionIsXAxis ? (showActions ? positionFactor : null) : 0.0,
+      rightFactor: directionIsXAxis ? (showActions ? null : positionFactor) : 0.0,
       topFactor: directionIsXAxis ? 0.0 : (showActions ? positionFactor : null),
-      bottomFactor:
-          directionIsXAxis ? 0.0 : (showActions ? null : positionFactor),
+      bottomFactor: directionIsXAxis ? 0.0 : (showActions ? null : positionFactor),
       widthFactor: directionIsXAxis ? extentFactor : null,
       heightFactor: directionIsXAxis ? null : extentFactor,
       child: child,
@@ -423,8 +420,7 @@ class Slidable extends StatefulWidget {
           child: child,
           actionPane: actionPane,
           actionDelegate: SlideActionListDelegate(actions: actions),
-          secondaryActionDelegate:
-              SlideActionListDelegate(actions: secondaryActions),
+          secondaryActionDelegate: SlideActionListDelegate(actions: secondaryActions),
           showAllActionsThreshold: showAllActionsThreshold,
           actionExtentRatio: actionExtentRatio,
           movementDuration: movementDuration,
@@ -542,21 +538,18 @@ class Slidable extends StatefulWidget {
 /// The state of [Slidable] widget.
 /// You can open or close the [Slidable] by calling the corresponding methods of
 /// this object.
-class SlidableState extends State<Slidable>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin<Slidable> {
+class SlidableState extends State<Slidable> with TickerProviderStateMixin, AutomaticKeepAliveClientMixin<Slidable> {
   @override
   void initState() {
     super.initState();
-    _overallMoveController =
-        AnimationController(duration: widget.movementDuration, vsync: this)
-          ..addStatusListener(_handleDismissStatusChanged)
-          ..addListener(_handleOverallPositionChanged);
+    _overallMoveController = AnimationController(duration: widget.movementDuration, vsync: this)
+      ..addStatusListener(_handleDismissStatusChanged)
+      ..addListener(_handleOverallPositionChanged);
     _initAnimations();
   }
 
   void _initAnimations() {
-    _actionsMoveAnimation
-        ?.removeStatusListener(_handleShowAllActionsStatusChanged);
+    _actionsMoveAnimation?.removeStatusListener(_handleShowAllActionsStatusChanged);
     _dismissAnimation?.removeStatusListener(_handleShowAllActionsStatusChanged);
 
     _actionsMoveAnimation = CurvedAnimation(
@@ -694,10 +687,11 @@ class SlidableState extends State<Slidable>
       });
     }
     if (_actionCount > 0) {
+      double remainingSpace = _overallDragAxisExtent * (1.0 - _overallMoveController.value);
       _overallMoveController.animateTo(
         _totalActionsExtent,
-        curve: Curves.easeIn,
-        duration: widget.movementDuration,
+        curve: Curves.linear,
+        duration: Duration(milliseconds: (remainingSpace / (horizontalVelocity.abs() / 1000)).toInt()),
       );
     }
   }
@@ -766,9 +760,7 @@ class SlidableState extends State<Slidable>
     final double delta = details.primaryDelta!;
     _dragExtent += delta;
     setState(() {
-      actionType = _dragExtent.sign >= 0
-          ? SlideActionType.primary
-          : SlideActionType.secondary;
+      actionType = _dragExtent.sign >= 0 ? SlideActionType.primary : SlideActionType.secondary;
       if (_actionCount > 0) {
         if (_dismissible && !widget.dismissal!.dragDismissible) {
           // If the widget is not dismissible by dragging, clamp drag result
@@ -778,12 +770,13 @@ class SlidableState extends State<Slidable>
                   .clamp(0.0, _totalActionsExtent)
                   .toDouble();
         } else {
-          _overallMoveController.value =
-              _dragExtent.abs() / _overallDragAxisExtent;
+          _overallMoveController.value = _dragExtent.abs() / _overallDragAxisExtent;
         }
       }
     });
   }
+
+  double horizontalVelocity = 0.0;
 
   void _handleDragEnd(DragEndDetails details) {
     if (widget.controller != null && widget.controller!.activeState != this) {
@@ -792,6 +785,7 @@ class SlidableState extends State<Slidable>
 
     _dragUnderway = false;
     final double velocity = details.primaryVelocity!;
+    horizontalVelocity = details.velocity.pixelsPerSecond.dx;
     final bool shouldOpen = velocity.sign == _dragExtent.sign;
     final bool fast = velocity.abs() > widget.fastThreshold;
 
@@ -813,8 +807,7 @@ class SlidableState extends State<Slidable>
   void _handleShowAllActionsStatusChanged(AnimationStatus status) {
     // Make sure to rebuild a last time, otherwise the slide action could
     // be scrambled.
-    if (status == AnimationStatus.completed ||
-        status == AnimationStatus.dismissed) {
+    if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
       setState(() {});
     }
 
