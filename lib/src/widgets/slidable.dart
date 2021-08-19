@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -691,7 +692,7 @@ class SlidableState extends State<Slidable> with TickerProviderStateMixin, Autom
       _overallMoveController.animateTo(
         _totalActionsExtent,
         curve: Curves.linear,
-        duration: Duration(milliseconds: (remainingSpace / (horizontalVelocity.abs() / 1000)).toInt()),
+        duration: Duration(milliseconds: max(remainingSpace ~/ (_horizontalVelocity.abs() / 1000), 200)),
       );
     }
   }
@@ -776,7 +777,7 @@ class SlidableState extends State<Slidable> with TickerProviderStateMixin, Autom
     });
   }
 
-  double horizontalVelocity = 0.0;
+  double _horizontalVelocity = 0;
 
   void _handleDragEnd(DragEndDetails details) {
     if (widget.controller != null && widget.controller!.activeState != this) {
@@ -785,7 +786,7 @@ class SlidableState extends State<Slidable> with TickerProviderStateMixin, Autom
 
     _dragUnderway = false;
     final double velocity = details.primaryVelocity!;
-    horizontalVelocity = details.velocity.pixelsPerSecond.dx;
+    _horizontalVelocity = details.velocity.pixelsPerSecond.dx;
     final bool shouldOpen = velocity.sign == _dragExtent.sign;
     final bool fast = velocity.abs() > widget.fastThreshold;
 
